@@ -1,0 +1,52 @@
+version: "3.7"
+
+services: 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    environment:
+      - "cluster.name=atk-es-cluster"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - "xpack.security.enabled=false"
+      - "es.enforce.bootstrap.checks"
+      - "http.host=0.0.0.0"
+      - "network.host=_eth0:ipv4_"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+      - "discovery.zen.minimum_master_nodes=2"
+      - "xpack.monitoring.collection.enabled=true"
+    networks:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.2
+    ports:
+      - "127.0.0.1:5601:5601"
+    networks:
+      - elasticsearch
+
+  metricbeat-host:
+    image: docker.elastic.co/beats/metricbeat:6.4.2
+    command: metricbeat -e -c /metricbeat/metricbeat-host.yml -system.hostfs=/hostfs
+    user:
+      root
+    environment:
+      - ELASTICSEARCH_URL=elasticsearch:9200
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - $PWD/metricbeat-host.yml:/metricbeat/metricbeat-host.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - elasticsearch
+
+  grafana:
+    image: grafana/grafana:5.2.4
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - $PWD/grafana/provisioning/:/etc/grafana/provisioning/:ro
+    networks:
+      - elasticsearch
+
+networks:
+  elasticsearch:

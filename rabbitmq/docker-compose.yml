@@ -1,0 +1,76 @@
+version: "3.6"
+
+networks:
+  rabbit_heaven:
+  rabbit_hell:
+  dmz:
+
+services:
+
+  python-client:
+    image: dockerbirmingham/python-rabbit-client
+    build: ./python-client
+    ports:
+      - 5000:5000
+    networks:
+      - dmz
+
+  spring-client:
+    image: dockerbirmingham/spring-rabbit-client
+    build: ./spring-client
+    ports:
+      - 8080:8080
+    networks:
+      - dmz
+
+  rabbit:
+    image: haproxy:1.8.14-alpine
+    ports:
+      - 15672:15672
+      - 5672:5672
+      - 9099:9099
+    volumes:
+      - $PWD/haproxy/haproxy.cfg:/etc/haproxy/haproxy.cfg:ro
+    command: -f /etc/haproxy/haproxy.cfg
+    networks:
+      - rabbit_heaven
+      - dmz
+
+  rabbit1:
+    image: dockerbirmingham/rabbitmq-cluster
+    build: ./rabbitmq
+    hostname: rabbit1
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=myxomatosis
+    volumes:
+      - rabbitmq1:/var/lib/rabbitmq
+    networks:
+      - rabbit_heaven
+
+  rabbit2:
+    image: dockerbirmingham/rabbitmq-cluster
+    build: ./rabbitmq
+    hostname: rabbit2
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=myxomatosis
+    volumes:
+      - rabbitmq2:/var/lib/rabbitmq
+    networks:
+      - rabbit_heaven
+
+  rabbit3:
+    image: dockerbirmingham/rabbitmq-cluster
+    build: ./rabbitmq
+    hostname: rabbit3
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=myxomatosis
+    volumes:
+      - rabbitmq3:/var/lib/rabbitmq
+    networks:
+      - rabbit_heaven
+      - rabbit_hell
+
+volumes:
+   rabbitmq1:
+   rabbitmq2:
+   rabbitmq3:

@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  server:
+    image: dockerbirmingham/iperf3-alpine
+    build: ./
+    command: -s
+
+  client:
+    image: dockerbirmingham/iperf3-alpine
+    build: ./
+    command:  -c server -i 1 -t 30
